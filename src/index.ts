@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { SVEAccount, SessionUserInitializer, LoginState } from 'svebase/dist/SVEAccount';
 import { ServiceInfo } from './service_info';
 import { Headers } from './headers';
+import { check_authentication } from './middlewares'
 
 export interface UsernameRequest {
     user_name: string;
@@ -13,6 +14,8 @@ function SVESetUp(router: Router) {
     router.get("/check", (req: Request, res: Response) => {
         res.json(ServiceInfo.get_status());
     });
+
+    router.use(check_authentication);
 
     router.post("/login", (req: Request, res: Response) => {
         const body: UsernameRequest = <UsernameRequest>req.body;
