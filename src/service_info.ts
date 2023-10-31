@@ -14,6 +14,7 @@ export interface StorageIntegrity {
 export interface Status {
     status: boolean;
     version: string;
+    api_name: string;
     storage_integrity: StorageIntegrity;
     authorization_host: string;
 }
@@ -34,6 +35,7 @@ export class ServiceInfo {
         if (ServiceInfo.status_provider !== undefined) {
             return {
                 status: ServiceInfo.status_provider.status(),
+                api_name: ServiceInfo.api_name,
                 version: ServiceInfo.status_provider.version(),
                 storage_integrity: ServiceInfo.status_provider.storage_integrity(),
                 authorization_host: ServiceInfo.status_provider.authorization_host()
@@ -42,6 +44,7 @@ export class ServiceInfo {
             return {
                 status: false,
                 authorization_host: "Unknown",
+                api_name: ServiceInfo.api_name,
                 storage_integrity: {
                     persistent: false,
                     volatile: false
