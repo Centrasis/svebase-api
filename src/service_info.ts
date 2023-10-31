@@ -27,6 +27,7 @@ export interface StatusProvider {
 
 export class ServiceInfo {
     public static SESSION_STORAGE: Map<string, TokenInfo> = new Map<string, TokenInfo>();
+    public static api_name: string = "Some SVE API";
     public static auth_api_host: string = (process.env.AUTH_API_HOST) ? process.env.AUTH_API : "authentication.localhost";
     public static status_provider: StatusProvider | undefined;
     public static get_status(): Status {

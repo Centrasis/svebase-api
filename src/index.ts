@@ -1,23 +1,57 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, Express as ExpressApp } from 'express';
+import * as express from 'express';
+import { SessionOptions } from 'express-session';
+import * as compression from 'compression';
+import { json as jsonBody, urlencoded as urlencodedBody } from 'body-parser';
+import {express as expressUA} from 'express-useragent';
+import * as ExpressSession from 'express-session';
 import { SVEAccount, SessionUserInitializer, LoginState } from 'svebase/dist/SVEAccount';
 import { ServiceInfo } from './service_info';
 import { Headers } from './headers';
+import * as crypto from "crypto";
 import { check_authentication } from './middlewares'
+import * as http from 'http';
+
 
 export interface UsernameRequest {
     user_name: string;
 }
 
-function SVESetUp(router: Router) {
-    router.get("/", (req: Request, res: Response) => { res.status(204); });
 
-    router.get("/check", (req: Request, res: Response) => {
+function finalizeRouter(api_router: Router, session_name: string = 'sve-session', port: number = 3000): ExpressApp {
+    const app: ExpressApp = express();
+
+    app.use(jsonBody());
+    app.use(compression());
+    app.use(urlencodedBody({ extended: false }));
+    app.use(expressUA());
+
+    const login_router = Router();
+
+    const session_opts: SessionOptions = {
+        name: session_name,
+        secret: process.env.SECRET || crypto.randomBytes(20).toString('hex'),
+        cookie: {
+            secure: false,
+            sameSite: true
+        },
+        resave: true,
+        saveUninitialized: true
+    };
+
+    login_router.get("/", (req: Request, res: Response) => { res.status(204); });
+
+    login_router.get("/check", (req: Request, res: Response) => {
         res.json(ServiceInfo.get_status());
     });
 
-    router.use(check_authentication);
+    // Create session handler
+    api_router.use(ExpressSession(session_opts));
 
-    router.post("/login", (req: Request, res: Response) => {
+    // Create authentication handler
+    api_router.use(check_authentication);
+
+    login_router.post("/login", (req: Request, res: Response) => {
         const body: UsernameRequest = <UsernameRequest>req.body;
         fetch(ServiceInfo.auth_api_host + "/login/validate", {
             method: "POST",
@@ -36,18 +70,24 @@ function SVESetUp(router: Router) {
                     sessionID: <string>Headers.get_auth_token(req),
                     loginState: LoginState.LoggedInByUser
                 });
-                ServiceInfo.SESSION_STORAGE.set(Headers.get_auth_token(req), {
-                    created: new Date(),
-                    user: account
-                });
+                req.session.user = account;
                 res.status(200).json(account.getInitializer());
             });
         }).catch(err => {
             res.status(500).send('Error while accessing Auth-API: ' + JSON.stringify(err));
         });
     });
+
+    app.use(login_router);
+
+    const server = http.createServer(app);
+    server.listen(port, () => {
+        console.log(ServiceInfo.api_name + ' is listening on port ' + port.toString() + "!");
+    });
+
+    return app;
 }
 
 export {
-    SVESetUp
+    finalizeRouter
 }

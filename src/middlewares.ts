@@ -1,22 +1,19 @@
-import {Request, Response, NextFunction} from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { SVEAccount } from 'svebase/dist/SVEAccount';
-import { ServiceInfo } from './service_info';
 
 
-export interface AuthorizedRequest extends Request {
-    user: SVEAccount;
+declare module 'express-session' {
+    interface SessionData {
+        user: SVEAccount | undefined;
+    }
 }
 
 
-function check_authentication(req: AuthorizedRequest, res: Response, next: NextFunction): void {
-    if (req.header("Authorization")) {
-        const token = req.header("Authorization")?.replace("Bearer ", "");
-        if (ServiceInfo.SESSION_STORAGE.has(token)) {
-            req.user = ServiceInfo.SESSION_STORAGE.get(token).user;
-            return next();
-        }
+function check_authentication(req: Request, res: Response, next: NextFunction): void {
+    if ((req.session.user) !== undefined && (req.session.user instanceof SVEAccount)) {
+        return next();
     } else {
-        res.status(400).send("No 'Authorization' header present");
+        res.status(401).send("No Authorizated-Session present!");
     }
 }
 
