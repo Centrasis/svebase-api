@@ -27,6 +27,7 @@ function finalizeRouter(api_router: Router, session_name: string = 'sve-session'
     app.use(expressUA());
 
     const login_router = Router();
+    const check_router = Router();
 
     const session_opts: SessionOptions = {
         name: session_name,
@@ -39,14 +40,16 @@ function finalizeRouter(api_router: Router, session_name: string = 'sve-session'
         saveUninitialized: true
     };
 
-    login_router.get("/", (req: Request, res: Response) => { res.status(204); });
+    check_router.get("/", (req: Request, res: Response) => { res.status(204); });
 
-    login_router.get("/check", (req: Request, res: Response) => {
+    check_router.get("/check", (req: Request, res: Response) => {
         res.json(ServiceInfo.get_status());
     });
 
     // Create session handler
-    api_router.use(ExpressSession(session_opts));
+    const session_handler = ExpressSession(session_opts);
+    api_router.use(session_handler);
+    login_router.use(session_handler);
 
     // Create authentication handler
     api_router.use(check_authentication);
@@ -78,7 +81,9 @@ function finalizeRouter(api_router: Router, session_name: string = 'sve-session'
         });
     });
 
-    app.use("/", login_router);
+    app.use("/auth/", login_router);
+    app.use("/", check_router);
+    app.use("/api/", api_router);
 
     const server = http.createServer(app);
     server.listen(port, () => {
