@@ -40,7 +40,7 @@ function finalizeRouter(api_router: Router, session_name: string = 'sve-session'
         saveUninitialized: true
     };
 
-    check_router.get("/", (req: Request, res: Response) => { res.status(204); });
+    check_router.get("/", (req: Request, res: Response) => { res.sendStatus(204); });
 
     check_router.get("/check", (req: Request, res: Response) => {
         res.json(ServiceInfo.get_status());
