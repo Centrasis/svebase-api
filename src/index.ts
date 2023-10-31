@@ -3,10 +3,10 @@ import * as express from 'express';
 import { SessionOptions } from 'express-session';
 import * as compression from 'compression';
 import { json as jsonBody, urlencoded as urlencodedBody } from 'body-parser';
-import {express as expressUA} from 'express-useragent';
+import { express as expressUA } from 'express-useragent';
 import * as ExpressSession from 'express-session';
 import { SVEAccount, SessionUserInitializer, LoginState } from 'svebase/dist/SVEAccount';
-import { ServiceInfo } from './service_info';
+import { ServiceInfo, TokenInfo, Status, StatusProvider, StorageIntegrity } from './service_info';
 import { Headers } from './headers';
 import * as crypto from "crypto";
 import { check_authentication } from './middlewares'
@@ -94,5 +94,10 @@ function finalizeRouter(api_router: Router, session_name: string = 'sve-session'
 }
 
 export {
+    ServiceInfo,
+    TokenInfo,
+    Status,
+    StatusProvider,
+    StorageIntegrity,
     finalizeRouter
 }
