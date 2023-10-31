@@ -81,9 +81,9 @@ function finalizeRouter(api_router: Router, session_name: string = 'sve-session'
         });
     });
 
-    app.use("/auth/", login_router);
+    app.use("/auth", login_router);
     app.use("/", check_router);
-    app.use("/api/", api_router);
+    app.use("/api", api_router);
 
     const server = http.createServer(app);
     server.listen(port, () => {
