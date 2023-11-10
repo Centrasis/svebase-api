@@ -18,7 +18,7 @@ export interface UsernameRequest {
 }
 
 
-function finalizeRouter(api_router: Router, session_name: string = 'sve-session', port: number = 3000): ExpressApp {
+function finalizeRouter(api_router: Router, session_name: string = 'sve-session', port: number = 3000, add_login_handling: boolean = true): ExpressApp {
     const app: ExpressApp = express();
 
     app.use(jsonBody());
@@ -82,7 +82,9 @@ function finalizeRouter(api_router: Router, session_name: string = 'sve-session'
         });
     });
 
-    app.use("/auth", login_router);
+    if (add_login_handling) {
+        app.use("/auth", login_router);
+    }
     app.use("/", check_router);
     app.use("/api", api_router);
 
