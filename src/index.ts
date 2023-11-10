@@ -56,6 +56,7 @@ function finalizeRouter(api_router: Router, session_name: string = 'sve-session'
 
     login_router.post("/login", (req: Request, res: Response) => {
         const body: UsernameRequest = <UsernameRequest>req.body;
+        console.log("Login Request: ", body);
         fetch(ServiceInfo.auth_api_host + "/sso/login/validate", {
             method: "POST",
             mode: "cors",
