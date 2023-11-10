@@ -76,7 +76,7 @@ function finalizeRouter(api_router: Router, session_name: string = 'sve-session'
                 });
                 req.session.user = account;
                 res.status(200).json(account.getInitializer());
-            });
+            }, err => res.status(500).send('Error while reading Login-API response: ' + JSON.stringify(err)));
         }).catch(err => {
             res.status(500).send('Error while accessing Auth-API: ' + JSON.stringify(err));
         });
