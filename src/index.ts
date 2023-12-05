@@ -18,6 +18,40 @@ export interface UsernameRequest {
 }
 
 
+export function getSessionUser(req: Request): Promise<SVEAccount> {
+    return new Promise<SVEAccount>((resolve, reject) => {
+        if (req.session && req.session.user) {
+            resolve(req.session.user);
+        } else {
+            const body: UsernameRequest = <UsernameRequest>req.body;
+            fetch(ServiceInfo.auth_api_host + "/sso/login/validate", {
+                method: "POST",
+                mode: "cors",
+                cache: "no-cache",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer " + Headers.get_auth_token(req)
+                },
+                body: JSON.stringify(body)
+            }).then(response => {
+                response.json().then(response_body => {
+                    const account: SVEAccount = new SVEAccount(<SessionUserInitializer>{
+                        id: <number>response_body["id"],
+                        name: <string>response_body["user_name"],
+                        sessionID: <string>Headers.get_auth_token(req),
+                        loginState: LoginState.LoggedInByUser
+                    });
+                    req.session.user = account;
+                    resolve(account);
+                }, err => reject(err));
+            }).catch(err => {
+                reject(err);
+            });
+        }
+    });
+}
+
+
 function finalizeRouter(api_router: Router, session_name: string = 'sve-session', port: number = 3000, add_login_handling: boolean = true): ExpressApp {
     const app: ExpressApp = express();
 
@@ -55,28 +89,8 @@ function finalizeRouter(api_router: Router, session_name: string = 'sve-session'
     api_router.use(check_authentication);
 
     login_router.post("/login", (req: Request, res: Response) => {
-        const body: UsernameRequest = <UsernameRequest>req.body;
-        console.log("Login Request for user ", body.user_name);
-        fetch(ServiceInfo.auth_api_host + "/sso/login/validate", {
-            method: "POST",
-            mode: "cors",
-            cache: "no-cache",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": "Bearer " + Headers.get_auth_token(req)
-            },
-            body: JSON.stringify(body)
-        }).then(response => {
-            response.json().then(response_body => {
-                const account: SVEAccount = new SVEAccount(<SessionUserInitializer>{
-                    id: <number>response_body["id"],
-                    name: <string>response_body["user_name"],
-                    sessionID: <string>Headers.get_auth_token(req),
-                    loginState: LoginState.LoggedInByUser
-                });
-                req.session.user = account;
-                res.status(200).json(account.getInitializer());
-            }, err => res.status(500).send('Error while reading Login-API response: ' + JSON.stringify(err)));
+        getSessionUser(req).then(user => {
+            res.status(200).json(user.getInitializer());
         }).catch(err => {
             res.status(500).send('Error while accessing Auth-API: ' + JSON.stringify(err));
         });
